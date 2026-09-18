@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUAU Dev • Personal Portfolio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: JetBrains Mono & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        darkBg: '#050508',
+                        accentViolet: '#a855f7',
+                        accentCyan: '#06b6d4',
+                        accentPink: '#ec4899',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #040407;
+            color: #f3f4f6;
+            overflow-x: hidden;
+            user-select: none;
+            cursor: none !important;
+        }
+
+        a, button, input, div {
+            cursor: none !important;
+        }
+
+        .glass-card {
+            background: rgba(15, 15, 23, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            will-change: transform, box-shadow, border-color;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 16px rgba(168, 85, 247, 0.7), 0 0 30px rgba(6, 182, 212, 0.5);
+        }
+
+        /* Custom glowing cursor elements */
+        #cursor-dot {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            background-color: #a855f7;
+            border-radius: 50%;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
+            box-shadow: 0 0 12px #a855f7, 0 0 24px #06b6d4;
+        }
+
+        #cursor-ring {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 32px;
+            height: 32px;
+            border: 1.5px solid rgba(168, 85, 247, 0.5);
+            border-radius: 50%;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.08s ease-out, width 0.2s ease, height 0.2s ease, border-color 0.2s ease;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #040407;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.3);
+            border-radius: 3px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
+            height: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            background: #a855f7;
+            cursor: pointer;
+            box-shadow: 0 0 10px #a855f7;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center relative font-sans antialiased selection:bg-purple-500 selection:text-white overflow-hidden">
+
+    <!-- Custom Mouse Cursor Elements -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
+    <!-- Native HTML5 Audio Player with CORS support for Web Audio API -->
+    <audio id="audio-player" src="https://files.catbox.moe/wcw131.mp3" crossorigin="anonymous" preload="auto" loop></audio>
+
+    <!-- Animated Particles Background Canvas -->
+    <canvas id="bg-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+    <div id="enter-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/92 backdrop-blur-xl transition-opacity duration-1000">
+        <div class="text-center space-y-5 px-6 max-w-sm cursor-pointer">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 mb-2 animate-pulse shadow-lg shadow-purple-500/20">
+                <i class="fa-solid fa-play text-2xl ml-1"></i>
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-wider text-white glow-text font-mono">
+                [ CLICK TO ENTER ]
+            </h1>
+            <p class="text-xs text-purple-300/70 font-mono tracking-widest uppercase">
+                Interactive Profile • Audio Experience
+            </p>
+        </div>
+    </div>
+
+    <main class="relative z-10 w-full max-w-md p-4 my-8 mx-auto">
+        <div id="tilt-card" class="glass-card rounded-3xl p-6 sm:p-8 flex flex-col items-center space-y-6 transition-transform duration-150 ease-out">
+            
+            <!-- Header Tag -->
+            <div class="w-full flex justify-center items-center text-xs font-mono text-gray-400 border-b border-white/5 pb-3">
+                <div class="flex items-center space-x-2 bg-white/5 px-3 py-1 rounded-full border border-white/10 shadow-inner">
+                    <i class="fa-solid fa-code text-cyan-400"></i>
+                    <span class="text-gray-300 font-semibold tracking-wider">ROBLOX LUAU</span>
+                </div>
+            </div>
+
+            <!-- Avatar & Real-time Discord Status Ring -->
+            <div class="relative group">
+                <div id="avatar-glow-ring" class="absolute -inset-1 rounded-full bg-gradient-to-r from-purple-600 via-pink-500 to-cyan-500 opacity-75 blur-md group-hover:opacity-100 transition duration-500"></div>
+                
+                <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-2 border-white/20 shadow-2xl bg-zinc-900">
+                    <img id="discord-avatar" 
+                         src="https://placehold.co/300x300/181824/a855f7?text=LUAU" 
+                         alt="Discord Avatar" 
+                         class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500">
+                </div>
+
+                <!-- Discord Live Status Dot Badge -->
+                <div id="status-dot" class="absolute bottom-1 right-1 w-7 h-7 bg-zinc-700 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-zinc-900 transition-colors duration-300" title="Discord Status">
+                    <div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                </div>
+            </div>
+
+            <!-- Title & Dynamic Typing Bio -->
+            <div class="text-center space-y-2 w-full">
+                <div class="flex flex-col items-center justify-center space-y-0.5">
+                    <div class="flex items-center space-x-2">
+                        <h2 id="discord-display-name" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white glow-text">
+                            LUAU Dev
+                        </h2>
+                        <span class="text-cyan-400 text-lg" title="Verified Creator">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </span>
+                    </div>
+                    <p id="discord-handle" class="text-xs font-mono text-purple-400 font-medium">@luau_dev</p>
+                </div>
+
+                <!-- Requested Bio Typing Rotator -->
+                <div class="h-6 flex items-center justify-center">
+                    <p id="typing-text" class="text-xs sm:text-sm font-mono text-purple-300/90 tracking-wide font-medium"></p>
+                    <span class="w-0.5 h-4 bg-purple-400 inline-block ml-1 animate-pulse"></span>
+                </div>
+            </div>
+
+            <!-- Live Discord Presence / Activity Widget -->
+            <div id="discord-card" class="w-full bg-black/40 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between text-left shadow-inner">
+                <div class="flex items-center space-x-3 min-w-0 flex-1">
+                    <div class="relative flex-shrink-0">
+                        <img id="card-discord-avatar" src="https://placehold.co/100x100/5865F2/ffffff?text=Discord" alt="Discord Avatar" class="w-11 h-11 rounded-xl border border-indigo-500/30 object-cover">
+                        <span id="card-status-dot" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-gray-500 rounded-full border-2 border-zinc-900"></span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center space-x-1.5">
+                            <p id="card-discord-username" class="text-xs font-bold text-white truncate">@luau_dev</p>
+                            <i class="fa-brands fa-discord text-indigo-400 text-xs"></i>
+                        </div>
+                        <p id="discord-activity-detail" class="text-[11px] text-gray-400 truncate">Connecting to Lanyard...</p>
+                    </div>
+                </div>
+                <button id="copy-discord-btn" class="flex-shrink-0 ml-2 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-mono px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy</span>
+                </button>
+            </div>
+
+            <div class="w-full bg-black/50 border border-white/10 rounded-2xl p-4 space-y-3 relative overflow-hidden">
+                <!-- Audio Spectrum Visualizer Canvas -->
+                <canvas id="visualizer-canvas" class="absolute inset-0 w-full h-full opacity-40 pointer-events-none"></canvas>
+
+                <div class="relative z-10 flex items-center justify-between">
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-500 flex-shrink-0 flex items-center justify-center shadow-md">
+                            <i id="music-disc-icon" class="fa-solid fa-compact-disc text-white text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p id="song-title" class="text-xs font-bold text-white truncate">xo tour life cover</p>
+                            <p id="song-artist" class="text-[11px] text-purple-300 truncate">nicopatty, iwue</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <button id="play-btn" class="w-9 h-9 rounded-full bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center shadow-lg shadow-purple-600/40 transition active:scale-95">
+                            <i id="play-icon" class="fa-solid fa-play text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="relative z-10 space-y-1">
+                    <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden cursor-pointer" id="progress-container">
+                        <div id="progress-bar" class="bg-gradient-to-r from-purple-500 to-cyan-400 h-full w-0 transition-all duration-100"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-mono text-gray-400">
+                        <span id="curr-time">0:00</span>
+                        <span id="dur-time">0:00</span>
+                    </div>
+                </div>
+
+                <!-- Volume Slider Controls -->
+                <div class="relative z-10 flex items-center space-x-2 pt-1 border-t border-white/5">
+                    <button id="mute-btn" class="text-gray-400 hover:text-white transition text-xs">
+                        <i id="mute-icon" class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <input type="range" id="volume-slider" min="0" max="100" step="1" value="70" class="w-full">
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-purple-900/90 border border-purple-500/40 text-white text-xs font-mono px-4 py-2.5 rounded-xl shadow-2xl opacity-0 translate-y-4 transition-all duration-300 pointer-events-none z-50 flex items-center space-x-2">
+        <i class="fa-solid fa-check text-emerald-400"></i>
+        <span id="toast-msg">Copied Discord username!</span>
+    </div>
+
+    <script>
+        const DISCORD_USER_ID = "823898179153821707";
+        let currentDiscordTag = "@luau_dev";
+
+        function updateDiscordUI(presence) {
+            if (!presence) return;
+
+            const user = presence.discord_user;
+            if (user) {
+                const avatarHash = user.avatar;
+                const avatarUrl = avatarHash 
+                    ? `https://cdn.discordapp.com/avatars/${user.id}/${avatarHash}.${avatarHash.startsWith('a_') ? 'gif' : 'png'}?size=300`
+                    : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`;
+
+                const mainAvatar = document.getElementById('discord-avatar');
+                if (mainAvatar) mainAvatar.src = avatarUrl;
+                
+                const cardAvatar = document.getElementById('card-discord-avatar');
+                if (cardAvatar) cardAvatar.src = avatarUrl;
+
+                const displayName = user.global_name || user.username || "LUAU Dev";
+                const nameEl = document.getElementById('discord-display-name');
+                if (nameEl) nameEl.textContent = displayName;
+
+                const tag = user.username ? `@${user.username}` : "@luau_dev";
+                currentDiscordTag = tag;
+
+                const handleEl = document.getElementById('discord-handle');
+                if (handleEl) handleEl.textContent = tag;
+
+                const cardUserEl = document.getElementById('card-discord-username');
+                if (cardUserEl) cardUserEl.textContent = tag;
+            }
+
+            const status = presence.discord_status || 'offline';
+            const statusColors = {
+                online: '#22c55e',
+                idle: '#f59e0b',
+                dnd: '#ef4444',
+                offline: '#6b7280'
+            };
+            const activeColor = statusColors[status] || statusColors.offline;
+
+            const statusDot = document.getElementById('status-dot');
+            if (statusDot) {
+                statusDot.style.borderColor = activeColor;
+                if (statusDot.firstElementChild) {
+                    statusDot.firstElementChild.style.backgroundColor = activeColor;
+                }
+            }
+
+            const cardStatusDot = document.getElementById('card-status-dot');
+            if (cardStatusDot) cardStatusDot.style.backgroundColor = activeColor;
+
+            const activityDetail = document.getElementById('discord-activity-detail');
+            if (activityDetail) {
+                if (presence.listening_to_spotify && presence.spotify) {
+                    const spotify = presence.spotify;
+                    activityDetail.textContent = `🎵 ${spotify.song} - ${spotify.artist}`;
+                } else if (presence.activities && presence.activities.length > 0) {
+                    const act = presence.activities.find(a => a.type === 0 || a.type === 4) || presence.activities[0];
+                    if (act.type === 4 && act.state) {
+                        activityDetail.textContent = `💬 ${act.state}`;
+                    } else if (act.name) {
+                        activityDetail.textContent = `🎮 Playing ${act.name}`;
+                    } else {
+                        activityDetail.textContent = `Discord Status: ${status.toUpperCase()}`;
+                    }
+                } else {
+                    activityDetail.textContent = status === 'offline' ? 'Currently Offline' : 'Active on Discord';
+                }
+            }
+        }
+
+        async function fetchLanyardREST() {
+            try {
+                const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
+                const data = await res.json();
+                if (data && data.success && data.data) {
+                    updateDiscordUI(data.data);
+                }
+            } catch (err) {
+                console.warn("Lanyard REST fetch note:", err);
+            }
+        }
+
+        function connectLanyard() {
+            fetchLanyardREST();
+            try {
+                const ws = new WebSocket('wss://api.lanyard.rest/socket');
+                let heartbeatInterval;
+
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({
+                        op: 2,
+                        d: { subscribe_to_id: DISCORD_USER_ID }
+                    }));
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.op === 1) {
+                        heartbeatInterval = setInterval(() => {
+                            if (ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ op: 3 }));
+                            }
+                        }, data.d.heartbeat_interval);
+                    } else if (data.t === 'INIT_STATE' || data.t === 'PRESENCE_UPDATE') {
+                        updateDiscordUI(data.d);
+                    }
+                };
+
+                ws.onerror = () => {
+                    setInterval(fetchLanyardREST, 8000);
+                };
+
+                ws.onclose = () => {
+                    if (heartbeatInterval) clearInterval(heartbeatInterval);
+                };
+            } catch (e) {
+                setInterval(fetchLanyardREST, 8000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            connectLanyard();
+
+            /* Custom Cursor Dynamics */
+            const cursorDot = document.getElementById('cursor-dot');
+            const cursorRing = document.getElementById('cursor-ring');
+
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            let ringX = mouseX;
+            let ringY = mouseY;
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                if (cursorDot) {
+                    cursorDot.style.left = `${mouseX}px`;
+                    cursorDot.style.top = `${mouseY}px`;
+                }
+            });
+
+            function renderCursorRing() {
+                ringX += (mouseX - ringX) * 0.18;
+                ringY += (mouseY - ringY) * 0.18;
+                if (cursorRing) {
+                    cursorRing.style.left = `${ringX}px`;
+                    cursorRing.style.top = `${ringY}px`;
+                }
+                requestAnimationFrame(renderCursorRing);
+            }
+            renderCursorRing();
+
+            /* 3D Card Tilt Effect */
+            const tiltCard = document.getElementById('tilt-card');
+
+            if (tiltCard) {
+                window.addEventListener('mousemove', (e) => {
+                    const rect = tiltCard.getBoundingClientRect();
+                    const cardCenterX = rect.left + rect.width / 2;
+                    const cardCenterY = rect.top + rect.height / 2;
+
+                    const deltaX = (e.clientX - cardCenterX) / (window.innerWidth / 2);
+                    const deltaY = (e.clientY - cardCenterY) / (window.innerHeight / 2);
+
+                    targetRotateX = (-deltaY * 10).toFixed(2);
+                    targetRotateY = (deltaX * 10).toFixed(2);
+                });
+
+                window.addEventListener('mouseleave', () => {
+                    targetRotateX = 0;
+                    targetRotateY = 0;
+                });
+            }
+
+            /* Requested Bio Typing Phrases Engine */
+            const typingText = document.getElementById('typing-text');
+            const phrases = [
+                "LUAU Roblox Developer",
+                "i develop roblox shi",
+                "like my portfolio? thanks",
+                "hey i dont got any more ideas left",
+                "guy that does stuff"
+            ];
+            let phraseIdx = 0;
+            let charIdx = 0;
+            let isDeleting = false;
+
+            function typeLoop() {
+                if (!typingText) return;
+
+                const currentPhrase = phrases[phraseIdx];
+
+                if (isDeleting) {
+                    typingText.textContent = currentPhrase.substring(0, charIdx - 1);
+                    charIdx--;
+                } else {
+                    typingText.textContent = currentPhrase.substring(0, charIdx + 1);
+                    charIdx++;
+                }
+
+                let speed = isDeleting ? 30 : 60;
+
+                if (!isDeleting && charIdx === currentPhrase.length) {
+                    speed = 2200;
+                    isDeleting = true;
+                } else if (isDeleting && charIdx === 0) {
+                    isDeleting = false;
+                    phraseIdx = (phraseIdx + 1) % phrases.length;
+                    speed = 400;
+                }
+
+                setTimeout(typeLoop, speed);
+            }
+            typeLoop();
+
+            /* Copy Discord Username */
+            const discordCopyBtn = document.getElementById('copy-discord-btn');
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+
+            if (discordCopyBtn) {
+                discordCopyBtn.addEventListener('click', () => {
+                    const dummy = document.createElement('input');
+                    document.body.appendChild(dummy);
+                    dummy.value = currentDiscordTag;
+                    dummy.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(dummy);
+
+                    if (toastMsg) toastMsg.textContent = `Copied username: ${currentDiscordTag}`;
+                    if (toast) {
+                        toast.classList.remove('opacity-0', 'translate-y-4');
+                        toast.classList.add('opacity-100', 'translate-y-0');
+
+                        setTimeout(() => {
+                            toast.classList.remove('opacity-100', 'translate-y-0');
+                            toast.classList.add('opacity-0', 'translate-y-4');
+                        }, 2500);
+                    }
+                });
+            }
+        });
+
+        const audioPlayer = document.getElementById('audio-player');
+        let isPlaying = false;
+        let beatEnergy = 0;
+        let targetRotateX = 0;
+        let targetRotateY = 0;
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds === null) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function updatePlayerTimeUI() {
+            if (!audioPlayer) return;
+            const curr = audioPlayer.currentTime || 0;
+            const dur = audioPlayer.duration || 0;
+
+            const currTimeEl = document.getElementById('curr-time');
+            const durTimeEl = document.getElementById('dur-time');
+            const progressBar = document.getElementById('progress-bar');
+
+            if (currTimeEl) currTimeEl.textContent = formatTime(curr);
+            if (durTimeEl) durTimeEl.textContent = formatTime(dur);
+
+            if (dur > 0 && progressBar) {
+                const percent = (curr / dur) * 100;
+                progressBar.style.width = `${percent}%`;
+            }
+        }
+
+        if (audioPlayer) {
+            audioPlayer.addEventListener('timeupdate', updatePlayerTimeUI);
+
+            audioPlayer.addEventListener('play', () => {
+                isPlaying = true;
+                const playIcon = document.getElementById('play-icon');
+                const musicDisc = document.getElementById('music-disc-icon');
+                if (playIcon) playIcon.className = "fa-solid fa-pause text-sm";
+                if (musicDisc) musicDisc.classList.add('animate-spin-slow');
+            });
+
+            audioPlayer.addEventListener('pause', () => {
+                isPlaying = false;
+                const playIcon = document.getElementById('play-icon');
+                const musicDisc = document.getElementById('music-disc-icon');
+                if (playIcon) playIcon.className = "fa-solid fa-play text-sm";
+                if (musicDisc) musicDisc.classList.remove('animate-spin-slow');
+            });
+        }
+
+        /* Enter Overlay Click Trigger */
+        const enterOverlay = document.getElementById('enter-overlay');
+        if (enterOverlay) {
+            enterOverlay.addEventListener('click', () => {
+                enterOverlay.style.opacity = '0';
+                setTimeout(() => { enterOverlay.style.display = 'none'; }, 1000);
+
+                initWebAudio();
+
+                if (audioPlayer) {
+                    audioPlayer.muted = false;
+                    const volumeSlider = document.getElementById('volume-slider');
+                    audioPlayer.volume = volumeSlider ? (volumeSlider.value / 100) : 0.7;
+                    
+                    const playPromise = audioPlayer.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            isPlaying = true;
+                        }).catch(err => {
+                            console.warn("Autoplay note:", err);
+                        });
+                    }
+                }
+            });
+        }
+
+        /* Player Controls */
+        const playBtn = document.getElementById('play-btn');
+        if (playBtn) {
+            playBtn.addEventListener('click', () => {
+                initWebAudio();
+                if (audioPlayer) {
+                    if (audioPlayer.paused) {
+                        audioPlayer.muted = false;
+                        audioPlayer.play().then(() => { isPlaying = true; }).catch(e => console.warn(e));
+                    } else {
+                        audioPlayer.pause();
+                        isPlaying = false;
+                    }
+                }
+            });
+        }
+
+        const volumeSlider = document.getElementById('volume-slider');
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', (e) => {
+                const val = e.target.value / 100;
+                if (audioPlayer) {
+                    audioPlayer.volume = val;
+                    audioPlayer.muted = (val === 0);
+                }
+                const muteIcon = document.getElementById('mute-icon');
+                if (muteIcon) {
+                    if (val === 0) {
+                        muteIcon.className = "fa-solid fa-volume-xmark";
+                    } else if (val < 0.5) {
+                        muteIcon.className = "fa-solid fa-volume-low";
+                    } else {
+                        muteIcon.className = "fa-solid fa-volume-high";
+                    }
+                }
+            });
+        }
+
+        const muteBtn = document.getElementById('mute-btn');
+        if (muteBtn) {
+            let lastVol = 0.7;
+            muteBtn.addEventListener('click', () => {
+                const muteIcon = document.getElementById('mute-icon');
+                if (audioPlayer && audioPlayer.volume > 0 && !audioPlayer.muted) {
+                    lastVol = audioPlayer.volume;
+                    audioPlayer.volume = 0;
+                    audioPlayer.muted = true;
+                    if (volumeSlider) volumeSlider.value = 0;
+                    if (muteIcon) muteIcon.className = "fa-solid fa-volume-xmark";
+                } else if (audioPlayer) {
+                    audioPlayer.muted = false;
+                    audioPlayer.volume = lastVol || 0.7;
+                    if (volumeSlider) volumeSlider.value = (lastVol || 0.7) * 100;
+                    if (muteIcon) muteIcon.className = (lastVol || 0.7) > 0.5 ? "fa-solid fa-volume-high" : "fa-solid fa-volume-low";
+                }
+            });
+        }
+
+        const progressContainer = document.getElementById('progress-container');
+        if (progressContainer) {
+            progressContainer.addEventListener('click', (e) => {
+                const rect = progressContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const width = rect.width;
+                if (audioPlayer && audioPlayer.duration) {
+                    audioPlayer.currentTime = (clickX / width) * audioPlayer.duration;
+                }
+            });
+        }
+
+        const vizCanvas = document.getElementById('visualizer-canvas');
+        const vizCtx = vizCanvas ? vizCanvas.getContext('2d') : null;
+        const avatarRing = document.getElementById('avatar-glow-ring');
+        const tiltCard = document.getElementById('tilt-card');
+
+        let audioCtx = null;
+        let analyser = null;
+        let sourceNode = null;
+        let frequencyData = null;
+
+        function initWebAudio() {
+            if (audioCtx) {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                return;
+            }
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+                analyser = audioCtx.createAnalyser();
+                
+                // FFT Size 256 yields 128 frequency bins (fine resolution in low bass region)
+                analyser.fftSize = 256; 
+                analyser.smoothingTimeConstant = 0.65; // Responsive sharp decay for distinct kick beats
+                
+                frequencyData = new Uint8Array(analyser.frequencyBinCount);
+                
+                if (audioPlayer) {
+                    sourceNode = audioCtx.createMediaElementSource(audioPlayer);
+                    sourceNode.connect(analyser);
+                    analyser.connect(audioCtx.destination);
+                }
+            } catch (e) {
+                console.warn("Web Audio setup note:", e);
+            }
+        }
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            
+            let rawBassPulse = 0;
+
+            if (isPlaying && analyser && frequencyData) {
+                analyser.getByteFrequencyData(frequencyData);
+
+                // Target Sub-Bass & Kick Drum (Bins 0..3 representing ~20Hz to 250Hz)
+                const bassSum = frequencyData[0] * 1.5 + frequencyData[1] * 1.2 + frequencyData[2] * 0.8;
+                const normalizedBass = Math.min(1, bassSum / (3.5 * 255));
+
+                // Apply sharp threshold filter so it pops on the beat instead of glowing continuously
+                const bassThreshold = 0.35;
+                if (normalizedBass > bassThreshold) {
+                    rawBassPulse = Math.pow((normalizedBass - bassThreshold) / (1 - bassThreshold), 1.5);
+                } else {
+                    rawBassPulse = 0;
+                }
+
+                // Smoothly decay energy for physical impact feel
+                beatEnergy += (rawBassPulse - beatEnergy) * 0.45;
+            } else {
+                beatEnergy *= 0.85;
+            }
+
+            // 2. Physical Card Scale & Bass Hit Glow Pulse
+            if (tiltCard) {
+                const scaleVal = 1 + (beatEnergy * 0.055);
+                tiltCard.style.transform = `perspective(1000px) rotateX(${targetRotateX || 0}deg) rotateY(${targetRotateY || 0}deg) scale(${scaleVal})`;
+
+                const shadowBlur = 35 + (beatEnergy * 60);
+                const shadowSpread = beatEnergy * 25;
+                tiltCard.style.boxShadow = `0 20px ${shadowBlur}px ${shadowSpread}px rgba(168, 85, 247, ${0.2 + beatEnergy * 0.65}), inset 0 0 20px rgba(6, 182, 212, ${0.1 + beatEnergy * 0.45})`;
+                tiltCard.style.borderColor = `rgba(168, 85, 247, ${0.15 + beatEnergy * 0.75})`;
+            }
+
+            if (avatarRing) {
+                avatarRing.style.transform = `scale(${1 + beatEnergy * 0.2})`;
+                avatarRing.style.opacity = `${0.5 + beatEnergy * 0.5}`;
+            }
+
+            // 3. Audio Frequency Spectrum Canvas Renderer
+            if (vizCanvas && vizCtx) {
+                if (vizCanvas.width !== vizCanvas.offsetWidth || vizCanvas.height !== vizCanvas.offsetHeight) {
+                    vizCanvas.width = vizCanvas.offsetWidth;
+                    vizCanvas.height = vizCanvas.offsetHeight;
+                }
+                
+                vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+
+                const numBars = 32;
+                const barWidth = vizCanvas.width / numBars;
+
+                for (let i = 0; i < numBars; i++) {
+                    let barHeight = 0;
+                    if (isPlaying && analyser && frequencyData) {
+                        const binIdx = Math.floor((i / numBars) * (frequencyData.length * 0.75));
+                        const freqVal = frequencyData[binIdx] || 0;
+                        barHeight = (freqVal / 255) * (vizCanvas.height * 0.9);
+                    }
+
+                    const gradient = vizCtx.createLinearGradient(0, vizCanvas.height, 0, 0);
+                    gradient.addColorStop(0, 'rgba(168, 85, 247, 0.1)');
+                    gradient.addColorStop(1, `rgba(6, 182, 212, ${0.3 + beatEnergy * 0.6})`);
+
+                    vizCtx.fillStyle = gradient;
+                    vizCtx.fillRect(i * barWidth, vizCanvas.height - barHeight, barWidth - 2, barHeight);
+                }
+            }
+        }
+        drawVisualizer();
+
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas ? bgCanvas.getContext('2d') : null;
+
+        let particles = [];
+        const particleCount = 55;
+
+        function resizeBg() {
+            if (bgCanvas) {
+                bgCanvas.width = window.innerWidth;
+                bgCanvas.height = window.innerHeight;
+            }
+        }
+        window.addEventListener('resize', resizeBg);
+        resizeBg();
+
+        class Particle {
+            constructor() {
+                this.reset(true);
+            }
+
+            reset(initial = false) {
+                this.x = Math.random() * (bgCanvas ? bgCanvas.width : window.innerWidth);
+                this.y = Math.random() * (bgCanvas ? bgCanvas.height : window.innerHeight);
+                this.vx = (Math.random() - 0.5) * 0.7;
+                this.vy = (Math.random() - 0.5) * 0.7;
+                this.radius = Math.random() * 2.2 + 0.8;
+                this.baseAlpha = Math.random() * 0.5 + 0.25;
+            }
+
+            update(speedMultiplier) {
+                this.x += this.vx * speedMultiplier;
+                this.y += this.vy * speedMultiplier;
+
+                if (!bgCanvas) return;
+                if (this.x < 0) this.x = bgCanvas.width;
+                if (this.x > bgCanvas.width) this.x = 0;
+                if (this.y < 0) this.y = bgCanvas.height;
+                if (this.y > bgCanvas.height) this.y = 0;
+            }
+
+            draw() {
+                if (!bgCtx) return;
+                bgCtx.beginPath();
+                bgCtx.arc(this.x, this.y, this.radius + (beatEnergy * 1.5), 0, Math.PI * 2);
+                bgCtx.fillStyle = `rgba(168, 85, 247, ${Math.min(1, this.baseAlpha + beatEnergy * 0.5)})`;
+                bgCtx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateBg() {
+            requestAnimationFrame(animateBg);
+            if (!bgCtx || !bgCanvas) return;
+
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+            const speedMultiplier = 1 + (beatEnergy * 1.8);
+
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update(speedMultiplier);
+                particles[i].draw();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    const maxDist = 130 + (beatEnergy * 40);
+
+                    if (dist < maxDist) {
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(particles[i].x, particles[i].y);
+                        bgCtx.lineTo(particles[j].x, particles[j].y);
+                        const lineAlpha = (0.2 + beatEnergy * 0.45) * (1 - dist / maxDist);
+                        bgCtx.strokeStyle = `rgba(6, 182, 212, ${lineAlpha})`;
+                        bgCtx.lineWidth = 0.7 + beatEnergy * 1.2;
+                        bgCtx.stroke();
+                    }
+                }
+            }
+        }
+        animateBg();
+    </script>
+</body>
+</html>
